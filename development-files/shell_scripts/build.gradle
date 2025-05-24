@@ -1,0 +1,92 @@
+task installScripts {
+    doLast {
+
+        def response = new ByteArrayOutputStream()
+        exec {
+            commandLine 'whoami'
+            standardOutput = response
+        }
+        new File ("$home/tmp/scripts").mkdir ()
+
+        Properties properties = new Properties();
+        properties.load (new FileReader("${home}/custom/custom.properties"))
+        String token = properties.getProperty ("cliq.zapi.key")
+
+        copy{
+            from "shell_scripts/scripts"
+            into "custom/tmp/scripts"
+        }
+
+        def filePathList = [];
+        getFilePathsForReplacePH ("${home}/custom/tmp/scripts", filePathList)
+
+        def user= response.toString ().replaceAll ("\\s|\\n", "")
+        filePathList.each { filePath ->
+            replaceToken( filePath, [
+                    [from: "home_ph",
+                     to: "$home"
+                    ],
+                    [from: "token_ph",
+                     to: "$token"
+                    ],
+                    [
+                     from:"user_ph",
+                      to:user
+                    ]
+            ])
+        }
+
+        println "placeholders replaced successfully"
+
+        copyWithSudo ("${home}/custom/tmp/scripts/usr", "/usr/local/bin")
+        copyWithSudo ("${home}/custom/tmp/scripts/network", "/etc/NetworkManager/dispatcher.d")
+
+        exec {
+            commandLine 'sudo', 'chown', 'root', '/etc/NetworkManager/dispatcher.d/myNetworkWebHook'
+        }
+
+        println "copied successfully"
+
+        delete "$home/custom/tmp"
+
+    }
+}
+
+def getFilePathsForReplacePH(dirName, filePathList)
+{
+    File[] scriptFiles = new File(dirName).listFiles()
+    for (File file : scriptFiles) {
+        if (file.isFile ()) {
+            filePathList.add(file.getAbsolutePath ())
+        }
+        else
+        {
+            getFilePathsForReplacePH (file.getAbsolutePath (), filePathList)
+        }
+    }
+}
+
+def copyWithSudo(from, to) {
+    exec {
+        commandLine 'find', from, '-type', 'f', '-exec', 'sudo', 'cp','-p', '{}', to, ';'
+    }
+}
+
+
+defaultTasks "installScripts"
+
+/*
+Below commands to be executed for scripts to work
+
+apt-get install jq
+sudo apt-get install gnome-screensaver
+sudo apt-get install dbus-x11
+sudo apt-get install ffmpeg
+sudo apt-get install xdotool
+
+After installing the scripts, execute the below command
+
+sudo chmod 755 /etc/NetworkManager/dispatcher.d/myNetworkWebHook
+
+
+ */

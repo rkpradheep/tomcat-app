@@ -1,36 +1,13 @@
 plugins {
-    id 'java-library'
+    id 'java'
     id 'war'
 }
 
-ext.replaceToken = { filePath, entries ->
+apply from: 'util.gradle'
 
-    if(entries) {
-        File file = new File(filePath)
-        if(file.exists ()) {
-            String contents = file.getText ('UTF-8')
-            entries.each() {
-                if(it.to.contains('$')) {
-                    contents = contents.replace(it.from, it.to)
-                }
-                else {
-                    contents = contents.replaceAll(it.from, it.to)
-                }
-            }
-            new File(filePath).write( contents, 'UTF-8' )
-        }
-    }
-
+ext {
+    deploymentPath = layout.buildDirectory.get().asFile.absolutePath
 }
-
-ext.configureTaskDependencies = { task, dependentTasks ->
-    task.dependsOn (dependentTasks)
-    for (int i = 0; i < dependentTasks.size () - 1; i++) {
-        dependentTasks [i + 1].mustRunAfter dependentTasks [i]
-    }
-}
-
-
 
 subprojects {
     apply plugin: 'java'
@@ -40,8 +17,8 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    tasks.withType(JavaCompile) {
-        options.compilerArgs.addAll([
+    tasks.withType (JavaCompile) {
+        options.compilerArgs.addAll ([
                 "--add-exports",
                 "java.base/sun.net.www.protocol.http=ALL-UNNAMED",
                 "--add-exports",
@@ -52,8 +29,8 @@ subprojects {
     }
 
     dependencies {
-        compileOnly fileTree(dir: "${project.parent.war.webAppDirectory.get().asFile.absolutePath}/WEB-INF/lib", include: ['*.jar'])
-        compileOnly fileTree(dir: "${project.parent.buildDir}/lib", include: ['*.jar'])
+        compileOnly  fileTree (dir: "${war.webAppDirectory.get().asFile.absolutePath}/WEB-INF/lib", include: ['*.jar'])
+        compileOnly  fileTree (dir: "${deploymentPath}/lib", include: ['*.jar'])
     }
 
     jar {
@@ -64,24 +41,17 @@ subprojects {
 }
 
 dependencies {
-   implementation files(
-            project('table-constants').tasks.named('jar').flatMap { it.archiveFile }
+    implementation files (
+            project ('table-constants').tasks.named ('jar').flatMap { it.archiveFile }
     )
-    implementation files(
-            project('framework').tasks.named('jar').flatMap { it.archiveFile }
+    implementation files (
+            project ('framework').tasks.named ('jar').flatMap { it.archiveFile }
     )
-    implementation files(
-            project('root-app').tasks.named('jar').flatMap { it.archiveFile }
+    implementation  files (
+            project ('root-app').tasks.named ('jar').flatMap { it.archiveFile }
     )
 }
 
-ext {
-    serverPath = "${projectDir}/tomcat_server"
-    deploymentPath = "${buildDir}"
-    neededPredefinedWebApps = []
-}
-
-// Source sets configuration for the root project
 sourceSets {
     main {
         java {
@@ -95,148 +65,130 @@ sourceSets {
 
 
 war {
-    webAppDirectory = file("src/main/webapp")
+    webAppDirectory = file ("src/main/webapp")
     archiveFileName = "ROOT.war"
-    destinationDirectory = file("${deploymentPath}/webapps")
+    destinationDirectory = file ("${deploymentPath}/webapps")
     doLast {
         println "WAR packaging completed"
     }
 }
 
 ext {
-    def customPropertyFile = new File("${projectDir}/development-files/custom/custom.properties")
+    def customPropertyFile = new File ("${projectDir}/development-files/custom/custom.properties")
     customProperties = null
-    if (customPropertyFile.exists()) {
+    if (customPropertyFile.exists ()) {
         println "custom.properties found"
-        customProperties = new Properties()
-        customProperties.load(customPropertyFile.newDataInputStream())
+        customProperties = new Properties ()
+        customProperties.load (customPropertyFile.newDataInputStream ())
     }
 }
 
-def getCustomProperty(key, defaultValue) {
-    if (customProperties == null || customProperties.getProperty(key) == null) {
-        return defaultValue
-    }
-    return customProperties.getProperty(key)
-}
-
-def replaceToken(String filePath, List replacements) {
-    def file = new File(filePath)
-    if (file.exists()) {
-        String content = file.text
-        replacements.each { replacement ->
-            content = content.replace(replacement.from, replacement.to)
-        }
-        file.text = content
-    }
-}
-
-tasks.register('setupTomcatContainer') {
+tasks.register ('setupTomcatContainer') {
     doLast {
         println "Tomcat deployment path ${deploymentPath}"
 
-        new File("${deploymentPath}/logs").mkdirs()
+        new File ("${deploymentPath}/logs").mkdirs ()
 
         copy {
-            from zipTree("${projectDir}/development-files/tomcat_binary.zip")
+            from zipTree ("${projectDir}/development-files/tomcat_binary.zip")
             into "${deploymentPath}"
         }
 
         copy {
-            from file("src/main/tomcat")
+            from file ("src/main/tomcat")
             into "${deploymentPath}"
         }
 
-        delete fileTree(dir: "${deploymentPath}/webapps")
-        delete "${deploymentPath}/webapps"
+        delete new File (deploymentPath.toString (), "webapps").listFiles ()
 
         exec {
-            commandLine "sed", "-i", "", "s|home_ph|${projectDir}|", "${buildDir}/run.sh"
+            commandLine "sed", "-i", "", "s|home_ph|${projectDir}|", "${deploymentPath}/run.sh"
         }
 
         exec {
-            commandLine "sed", "-i", "", "s|production_ph|${getCustomProperty("production", false)}|", "${buildDir}/run.sh"
+            commandLine "sed", "-i", "", "s|production_ph|${getCustomProperty ("production", false)}|", "${deploymentPath}/run.sh"
         }
 
         println "set-up tomcat container completed"
     }
 }
 
-tasks.register('doChangesForTomcat') {
+tasks.register ('doChangesForTomcat') {
     doLast {
-        replaceToken("${buildDir}/bin/setenv.sh", [
+        replaceToken ("${deploymentPath}/bin/setenv.sh", [
                 [from: "TOMCAT_APP=",
                  to  : "TOMCAT_APP=${projectDir}"
                 ],
                 [from: "CUSTOM_JAVA_OPTS=",
-                 to  : "CUSTOM_JAVA_OPTS=\"" + getCustomProperty("java.opts", "") + "\""
+                 to  : "CUSTOM_JAVA_OPTS=\"" + getCustomProperty ("java.opts", "") + "\""
                 ],
                 [from: "JAVA_HOME=",
-                 to  : "JAVA_HOME=\"" + System.getenv("JAVA_HOME") + "\""
+                 to  : "JAVA_HOME=\"" + System.getenv ("JAVA_HOME") + "\""
                 ]
         ])
 
-        if (getCustomProperty("custom.keystore.file", null) != null) {
+        if (getCustomProperty ("custom.keystore.file", null) != null) {
             copy {
-                from "${projectDir}/development-files/custom/${getCustomProperty("custom.keystore.file", null)}"
-                into "${buildDir}/conf/"
+                from "${projectDir}/development-files/custom/${getCustomProperty ("custom.keystore.file", null)}"
+                into "${deploymentPath}/conf/"
             }
-            replaceToken("${buildDir}/conf/server.xml", [
+            replaceToken ("${deploymentPath}/conf/server.xml", [
                     [from: "server.pfx",
-                     to  : "${getCustomProperty("custom.keystore.file", null)}"
+                     to  : "${getCustomProperty ("custom.keystore.file", null)}"
                     ],
                     [from: "certificateKeystorePassword=\"tomcat\"",
-                     to  : "certificateKeystorePassword=\"${getCustomProperty("custom.keystore.password", "")}\""
+                     to  : "certificateKeystorePassword=\"${getCustomProperty ("custom.keystore.password", "")}\""
                     ]
             ])
         }
 
-        if (getCustomProperty("custom.tomcat.http.port", null) != null) {
-            replaceToken("${buildDir}/conf/server.xml", [
+        if (getCustomProperty ("custom.tomcat.http.port", null) != null) {
+            replaceToken ("${deploymentPath}/conf/server.xml", [
                     [from: "port=\"80\"",
-                     to  : "port=\"${getCustomProperty("custom.tomcat.http.port")}\""
+                     to  : "port=\"${getCustomProperty ("custom.tomcat.http.port")}\""
                     ]
             ])
         }
 
-        if (getCustomProperty("custom.tomcat.https.port", null) != null) {
-            replaceToken("${buildDir}/conf/server.xml", [
+        if (getCustomProperty ("custom.tomcat.https.port", null) != null) {
+            replaceToken ("${deploymentPath}/conf/server.xml", [
                     [from: "port=\"443\"",
-                     to  : "port=\"${getCustomProperty("custom.tomcat.https.port")}\""
+                     to  : "port=\"${getCustomProperty ("custom.tomcat.https.port")}\""
                     ]
             ])
         }
 
         copy {
-            from project(":instrumentation").tasks.named("jar")
-            from project(":tomcat-core").tasks.named("jar")
+            from project (":instrumentation").tasks.named ("jar")
+            from project (":tomcat-core").tasks.named ("jar")
             into "${deploymentPath}/lib"
         }
 
     }
 }
 
-tasks.register('setupServer') {
+tasks.register ('setupServer') {
     doLast {
         println "All modules built and WAR deployed successfully"
     }
 }
 
-tasks.register('cleanAll') {
+tasks.register ('cleanAll') {
     group = 'build'
     description = 'Cleans all subprojects.'
 
     dependsOn subprojects.collect { it.path + ":clean" }
 }
 
-configureTaskDependencies(setupServer, [
+
+configureTaskDependencies (setupServer, [
         cleanAll,
         setupTomcatContainer,
-        project(':table-constants').build,
-        project(':framework').build,
-        project(':root-app').build,
-        project(':instrumentation').build,
-        project(':tomcat-core').build,
+        project (':table-constants').build,
+        project (':framework').build,
+        project (':root-app').build,
+        project (':instrumentation').build,
+        project (':tomcat-core').build,
         doChangesForTomcat,
         war
 ])

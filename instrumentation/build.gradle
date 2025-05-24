@@ -1,6 +1,3 @@
-plugins {
-    id 'java'
-}
 jar{
     archiveFileName = "instrumentation.jar"
     manifest {

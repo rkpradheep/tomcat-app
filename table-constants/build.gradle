@@ -1,8 +1,3 @@
-plugins {
-    id 'java'
-}
-
-def tmpDir = "${layout.buildDirectory.get ().asFile.absolutePath}/temp"
 def buildToolDir = file ("src/main/build-tools")
 
 dependencies {
@@ -11,6 +6,8 @@ dependencies {
 
 jar {
     doLast {
+
+        def tmpDir = "${layout.buildDirectory.get ().asFile.absolutePath}/temp"
         new File ("${tmpDir}").mkdirs ()
 
         project.javaexec {
@@ -30,8 +27,8 @@ jar {
 
         def mainClassesDir = sourceSets.main.output.classesDirs.asPath
 
-        delete fileTree (dir: mainClassesDir)
-        delete fileTree (dir: "${project.getBuildDir ().absolutePath}/libs}")
+        delete new File(mainClassesDir).listFiles ()
+        delete new File (layout.buildDirectory.get ().asFile, "libs").listFiles ()
 
         ant.javac (
                 srcdir: "${tmpDir}",
