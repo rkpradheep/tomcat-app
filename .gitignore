@@ -1,7 +1,6 @@
-tomcat_build/
 output.txt
-.gradle/
-build/
-custom/
+build
+development-files/custom
 uploads
 liveUrl.txt
+table-constants/velocity.log

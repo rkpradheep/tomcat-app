@@ -1,10 +1,7 @@
 plugins {
-    id 'java'
     id 'java-library'
+    id 'war'
 }
-
-
-ext.home = System.getProperty("user.dir")
 
 ext.replaceToken = { filePath, entries ->
 
@@ -34,7 +31,212 @@ ext.configureTaskDependencies = { task, dependentTasks ->
 }
 
 
-apply from: 'tomcat_server/build.gradle'
-apply from: 'shell_scripts/build.gradle'
 
-// tasks : setupServer, installScripts
+subprojects {
+    apply plugin: 'java'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    tasks.withType(JavaCompile) {
+        options.compilerArgs.addAll([
+                "--add-exports",
+                "java.base/sun.net.www.protocol.http=ALL-UNNAMED",
+                "--add-exports",
+                "java.base/sun.net.www.protocol.https=ALL-UNNAMED",
+                "--add-exports",
+                "java.base/sun.net.www.http=ALL-UNNAMED"
+        ])
+    }
+
+    dependencies {
+        compileOnly fileTree(dir: "${project.parent.war.webAppDirectory.get().asFile.absolutePath}/WEB-INF/lib", include: ['*.jar'])
+        compileOnly fileTree(dir: "${project.parent.buildDir}/lib", include: ['*.jar'])
+    }
+
+    jar {
+        doLast {
+            println ("jar packaging completed")
+        }
+    }
+}
+
+dependencies {
+   implementation files(
+            project('table-constants').tasks.named('jar').flatMap { it.archiveFile }
+    )
+    implementation files(
+            project('framework').tasks.named('jar').flatMap { it.archiveFile }
+    )
+    implementation files(
+            project('root-app').tasks.named('jar').flatMap { it.archiveFile }
+    )
+}
+
+ext {
+    serverPath = "${projectDir}/tomcat_server"
+    deploymentPath = "${buildDir}"
+    neededPredefinedWebApps = []
+}
+
+// Source sets configuration for the root project
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src/main/java"]
+        }
+        resources {
+            srcDirs = ["src/main/resources"]
+        }
+    }
+}
+
+
+war {
+    webAppDirectory = file("src/main/webapp")
+    archiveFileName = "ROOT.war"
+    destinationDirectory = file("${deploymentPath}/webapps")
+    doLast {
+        println "WAR packaging completed"
+    }
+}
+
+ext {
+    def customPropertyFile = new File("${projectDir}/development-files/custom/custom.properties")
+    customProperties = null
+    if (customPropertyFile.exists()) {
+        println "custom.properties found"
+        customProperties = new Properties()
+        customProperties.load(customPropertyFile.newDataInputStream())
+    }
+}
+
+def getCustomProperty(key, defaultValue) {
+    if (customProperties == null || customProperties.getProperty(key) == null) {
+        return defaultValue
+    }
+    return customProperties.getProperty(key)
+}
+
+def replaceToken(String filePath, List replacements) {
+    def file = new File(filePath)
+    if (file.exists()) {
+        String content = file.text
+        replacements.each { replacement ->
+            content = content.replace(replacement.from, replacement.to)
+        }
+        file.text = content
+    }
+}
+
+tasks.register('setupTomcatContainer') {
+    doLast {
+        println "Tomcat deployment path ${deploymentPath}"
+
+        new File("${deploymentPath}/logs").mkdirs()
+
+        copy {
+            from zipTree("${projectDir}/development-files/tomcat_binary.zip")
+            into "${deploymentPath}"
+        }
+
+        copy {
+            from file("src/main/tomcat")
+            into "${deploymentPath}"
+        }
+
+        delete fileTree(dir: "${deploymentPath}/webapps")
+        delete "${deploymentPath}/webapps"
+
+        exec {
+            commandLine "sed", "-i", "", "s|home_ph|${projectDir}|", "${buildDir}/run.sh"
+        }
+
+        exec {
+            commandLine "sed", "-i", "", "s|production_ph|${getCustomProperty("production", false)}|", "${buildDir}/run.sh"
+        }
+
+        println "set-up tomcat container completed"
+    }
+}
+
+tasks.register('doChangesForTomcat') {
+    doLast {
+        replaceToken("${buildDir}/bin/setenv.sh", [
+                [from: "TOMCAT_APP=",
+                 to  : "TOMCAT_APP=${projectDir}"
+                ],
+                [from: "CUSTOM_JAVA_OPTS=",
+                 to  : "CUSTOM_JAVA_OPTS=\"" + getCustomProperty("java.opts", "") + "\""
+                ],
+                [from: "JAVA_HOME=",
+                 to  : "JAVA_HOME=\"" + System.getenv("JAVA_HOME") + "\""
+                ]
+        ])
+
+        if (getCustomProperty("custom.keystore.file", null) != null) {
+            copy {
+                from "${projectDir}/development-files/custom/${getCustomProperty("custom.keystore.file", null)}"
+                into "${buildDir}/conf/"
+            }
+            replaceToken("${buildDir}/conf/server.xml", [
+                    [from: "server.pfx",
+                     to  : "${getCustomProperty("custom.keystore.file", null)}"
+                    ],
+                    [from: "certificateKeystorePassword=\"tomcat\"",
+                     to  : "certificateKeystorePassword=\"${getCustomProperty("custom.keystore.password", "")}\""
+                    ]
+            ])
+        }
+
+        if (getCustomProperty("custom.tomcat.http.port", null) != null) {
+            replaceToken("${buildDir}/conf/server.xml", [
+                    [from: "port=\"80\"",
+                     to  : "port=\"${getCustomProperty("custom.tomcat.http.port")}\""
+                    ]
+            ])
+        }
+
+        if (getCustomProperty("custom.tomcat.https.port", null) != null) {
+            replaceToken("${buildDir}/conf/server.xml", [
+                    [from: "port=\"443\"",
+                     to  : "port=\"${getCustomProperty("custom.tomcat.https.port")}\""
+                    ]
+            ])
+        }
+
+        copy {
+            from project(":instrumentation").tasks.named("jar")
+            from project(":tomcat-core").tasks.named("jar")
+            into "${deploymentPath}/lib"
+        }
+
+    }
+}
+
+tasks.register('setupServer') {
+    doLast {
+        println "All modules built and WAR deployed successfully"
+    }
+}
+
+tasks.register('cleanAll') {
+    group = 'build'
+    description = 'Cleans all subprojects.'
+
+    dependsOn subprojects.collect { it.path + ":clean" }
+}
+
+configureTaskDependencies(setupServer, [
+        cleanAll,
+        setupTomcatContainer,
+        project(':table-constants').build,
+        project(':framework').build,
+        project(':root-app').build,
+        project(':instrumentation').build,
+        project(':tomcat-core').build,
+        doChangesForTomcat,
+        war
+])

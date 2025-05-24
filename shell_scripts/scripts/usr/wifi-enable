@@ -1,3 +1,0 @@
-#!/bin/bash
-sudo nmcli radio wifi on
-sudo systemctl start wifi-enable.service

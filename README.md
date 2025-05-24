@@ -1,14 +1,10 @@
-5 Steps to set up build in linux distributions:
+3 Steps to set up build in linux distributions:
 
-1.) Create MyHome directory at your desired location using this command (mkdir MyHome)
+1.) Clone the server repository using this command (git clone https://github.com/rkpradheep/tomcat_app.git .)
 
-2.) Step into the MyHome directory using this command (cd MyHome)
+2.) Once the repository is cloned, enter this command to start the setup (sh setup.sh)
 
-3.) Clone the server repository using this command (git clone https://github.com/rkpradheep/tomcat_app.git .)
-
-4.) Once the repository is cloned, enter this command to start the setup (sh setup.sh)
-
-5.) Once the setup and build is successful, type the following commands to install the server as service so that it will be started automatically post OS boot
+3.) Once the setup and build is successful, type the following commands to install the server as service so that it will be started automatically post OS boot
 
         * sudo systemctl enable tomcat
 
@@ -20,11 +16,11 @@
 
 Custom configuration steps
 
-For custom properties and custom file, create a new directory named "custom" inside MyHome directory.
+For custom properties and custom file, create a new directory named "custom" inside tomcat-app/development-files directory.
 
 All the custom properties can be set in custom.properties file under custom directory.
 
-Example (MyHome/custom/custom.properties) : 
+Example (tomcat-app/custom/custom.properties) : 
 
 mail.user = abc@gmail.com
 

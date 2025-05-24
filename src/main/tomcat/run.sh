@@ -1,27 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
-. ./set_variables.sh
+TOMCAT_APP=home_ph
+PRODUCTION=production_ph
 
-source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-sdk use gradle 7.3
-
-sdk use java 17.0.14-zulu
-
-set -e
-trap '[ $? -eq 0 ] || echo "${RED}######### OPERATION FAILED #########${NC}"' EXIT
-
-echo "############## Build started ##############\n"
-
-
-#if [ -z "$(git log origin/$(git rev-parse --abbrev-ref HEAD)..HEAD)" ]; then
-#    if git diff --quiet; then
-#      git pull origin master --rebase
-#    fi
-#else
-#  echo "${RED}############## There are some unpushed commits. Please push and try again ##############${NC}\n"
-#  exit 1
-#fi
+exec > $TOMCAT_APP/build/nohup.out 2>&1
 
 setupMysql() {
 
@@ -52,10 +34,23 @@ podman=/opt/podman/bin/podman
     fi
 }
 
-setupMysql
-gradle setUpServer
+os_name=$(uname)
 
-sh $TOMCAT_APP/build/run.sh
+if [[ "$os_name" == "Darwin" ]]; then
+    echo "Setting up mysql for macOS."
+    setupMysql
+fi
 
 
-echo "${GREEN}############## Build completed ##############${NC}\n"
+cd $TOMCAT_APP/build
+
+appHealth=$(curl -s -X POST http://localhost/_app/health)
+
+echo "Application health check response: $appHealth"
+
+if test "$appHealth" = "true" ; then
+  	echo  'Going to shutdown tomcat'
+  	sh ./bin/shutdown.sh
+fi
+
+sh ./bin/catalina.sh jpda start

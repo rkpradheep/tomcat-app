@@ -1,0 +1,8 @@
+rootProject.name = 'tomcat-app'
+
+include 'framework'
+include 'instrumentation'
+include 'root-app'
+include 'table-constants'
+include 'tomcat-core'
+

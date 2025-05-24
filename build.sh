@@ -1,13 +1,25 @@
 #!/bin/bash
 
+. ./set_variables.sh
+
+appHealth=$(curl -s -X POST http://localhost/_app/health)
+
+echo "Application health check response: $appHealth"
+
+if test "$appHealth" = "true" ; then
+  	echo  'Going to shutdown tomcat'
+  	sh $TOMCAT_APP/build/bin/shutdown.sh
+fi
+
+
+rm -rf build
+
 os_name=$(uname)
 
 if [ "$os_name" == "Darwin" ]; then
     echo "Executing build script for MAC"
     exec sh mac_build.sh
 fi
-
-. ./set_variables.sh
 
 set -e
 trap '[ $? -eq 0 ] || echo "${RED}######### OPERATION FAILED #########${NC}"' EXIT
@@ -28,20 +40,20 @@ GRADLE=/opt/gradle/gradle-$GRADLE_VERSION/bin/gradle
 
 export JAVA_HOME=/opt/java/zulu$JAVA_VERSION
 
-export MY_HOME=$MY_HOME
+export TOMCAT_APP=$TOMCAT_APP
 
 if [ "$1" != "auto" ]; then
   sudo systemctl stop tomcat
 fi
 
 
-sudo rm -rf tomcat_build
+sudo rm -rf build
 
 echo "JAVA_HOME : ${JAVA_HOME}"
 echo "GRADLE : ${GRADLE}"
-echo "MY_HOME : ${MY_HOME}"
+echo "TOMCAT_APP : ${TOMCAT_APP}"
 
-$GRADLE setUpServer
+$GRADLE setupServer
 
 if [ "$1" != "auto" ]; then
   sudo systemctl start tomcat

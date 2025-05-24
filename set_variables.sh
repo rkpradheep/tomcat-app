@@ -1,6 +1,6 @@
 #!/bin/sh
 
-export MY_HOME=$(pwd)
+export TOMCAT_APP=$(pwd)
 
 export GRADLE_VERSION="7.3"
 
