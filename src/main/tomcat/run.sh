@@ -5,6 +5,9 @@ PRODUCTION=production_ph
 
 exec > $TOMCAT_APP/build/nohup.out 2>&1
 
+
+echo "##############" $(date +"%Y-%m-%d %r") " ==>  STARTING TOMCAT APPLICATION ##############\n\n\n"
+
 setupMysql() {
 
 MACHINE_NAME="podman-machine-default"
@@ -54,3 +57,5 @@ if test "$appHealth" = "true" ; then
 fi
 
 sh ./bin/catalina.sh jpda start
+
+echo "\n\n\n##############" $(date +"%Y-%m-%d %r") " ==> TOMCAT STARTED ##############\n\n\n"

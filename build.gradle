@@ -164,6 +164,7 @@ tasks.register ('doChangesForTomcat') {
         copy {
             from project (":instrumentation").tasks.named ("jar")
             from project (":tomcat-core").tasks.named ("jar")
+            from project (":protocol").tasks.named ("jar")
             into "${deploymentPath}/lib"
         }
 
@@ -186,12 +187,14 @@ tasks.register ('cleanAll') {
 
 configureTaskDependencies (setupServer, [
         setupTomcatContainer,
+        project (':table-constants').clean, //Since table-constants jar is generated dynamically and overwrites module's jar, we need to clean it first to force compile it
         project (':table-constants').build,
         project (':framework').build,
         project (':root-app').build,
         project (':root-app:zoho').build,
         project (':instrumentation').build,
         project (':tomcat-core').build,
+        project (':protocol').build,
         doChangesForTomcat,
         war
 ])

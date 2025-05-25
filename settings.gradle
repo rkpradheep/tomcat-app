@@ -8,3 +8,4 @@ include 'tomcat-core'
 
 
 include 'root-app:zoho'
+include 'protocol'

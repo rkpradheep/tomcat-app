@@ -1,4 +1,4 @@
-package com.server.system.https;
+package com.server.protocol.https;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -6,7 +6,7 @@ import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
 
-import com.server.system.http.HttpURLConnectionWrapper;
+import com.server.protocol.http.HttpURLConnectionWrapper;
 
 public class Handler extends sun.net.www.protocol.https.Handler
 {

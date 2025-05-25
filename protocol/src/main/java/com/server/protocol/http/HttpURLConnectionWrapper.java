@@ -1,4 +1,4 @@
-package com.server.system.http;
+package com.server.protocol.http;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
