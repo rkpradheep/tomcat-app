@@ -1,0 +1,5 @@
+dependencies {
+    implementation project(':framework')
+    implementation project(':root-app')
+    implementation project(':table-constants')
+}

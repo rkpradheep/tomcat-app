@@ -79,6 +79,6 @@ public class TableConstantGenerator
 			writer.close();
 		}
 
-		System.out.println("Generated");
+		System.out.println("Constants Generated");
 	}
 }

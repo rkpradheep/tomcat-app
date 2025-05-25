@@ -50,6 +50,9 @@ dependencies {
     implementation  files (
             project ('root-app').tasks.named ('jar').flatMap { it.archiveFile }
     )
+    implementation  files (
+            project ('root-app:zoho').tasks.named ('jar').flatMap { it.archiveFile }
+    )
 }
 
 sourceSets {
@@ -186,6 +189,7 @@ configureTaskDependencies (setupServer, [
         project (':table-constants').build,
         project (':framework').build,
         project (':root-app').build,
+        project (':root-app:zoho').build,
         project (':instrumentation').build,
         project (':tomcat-core').build,
         doChangesForTomcat,

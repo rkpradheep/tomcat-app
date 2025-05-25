@@ -5,16 +5,8 @@ dependencies {
     compileOnly fileTree (dir: "${buildToolDir}/lib", include: ['*.jar'])
 }
 
-compileJava{
-    doFirst { //Since we are replacing output jar and classes in doLast of jar task with custom generated classes, jar, we need to clean the output directory first
-        delete new File(mainClassesDir).listFiles ()
-        delete new File (layout.buildDirectory.get ().asFile, "libs").listFiles ()
-    }
-}
-
 jar {
     doLast {
-
         def tmpDir = "${layout.buildDirectory.get ().asFile.absolutePath}/temp"
         new File ("${tmpDir}").mkdirs ()
 
