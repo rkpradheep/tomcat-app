@@ -17,7 +17,7 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    tasks.withType (JavaCompile) {
+    tasks.withType (JavaCompile).configureEach {
         options.compilerArgs.addAll ([
                 "--add-exports",
                 "java.base/sun.net.www.protocol.http=ALL-UNNAMED",
@@ -182,7 +182,6 @@ tasks.register ('cleanAll') {
 
 
 configureTaskDependencies (setupServer, [
-        cleanAll,
         setupTomcatContainer,
         project (':table-constants').build,
         project (':framework').build,

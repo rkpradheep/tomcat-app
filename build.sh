@@ -1,5 +1,14 @@
 #!/bin/bash
 
+if [ -z "$(git log origin/$(git rev-parse --abbrev-ref HEAD)..HEAD)" ]; then
+    if git diff --quiet; then
+      git pull origin master --rebase
+    fi
+else
+  echo "${RED}############## There are some unpushed commits. Please push and try again ##############${NC}\n"
+  exit 1
+fi
+
 . ./set_variables.sh
 
 appHealth=$(curl -s -X POST http://localhost/_app/health)
@@ -25,16 +34,6 @@ set -e
 trap '[ $? -eq 0 ] || echo "${RED}######### OPERATION FAILED #########${NC}"' EXIT
 
 echo "############## Build started ##############\n"
-
-
-if [ -z "$(git log origin/$(git rev-parse --abbrev-ref HEAD)..HEAD)" ]; then
-    if git diff --quiet; then
-      git pull origin master --rebase
-    fi
-else
-  echo "${RED}############## There are some unpushed commits. Please push and try again ##############${NC}\n"
-  exit 1
-fi
 
 GRADLE=/opt/gradle/gradle-$GRADLE_VERSION/bin/gradle
 
