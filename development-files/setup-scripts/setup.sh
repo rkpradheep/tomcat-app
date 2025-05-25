@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. ./set_variables.sh
+. ../../set_variables.sh
 
 set -e
 trap '[ $? -eq 0 ] || echo "${RED}######### SETUP FAILED #########${NC}"' EXIT
@@ -14,7 +14,7 @@ sh setup_gradle.sh
 
 sh setup_java.sh
 
-if test "$DB_SERVER" = "mysql" ; then
+if test "$2" = "mysql" ; then
   sh setup_mysql.sh
 else
   # Using repository
@@ -31,6 +31,6 @@ fi
 
 if [ "$1" != "auto" ]; then
   sh setup_services.sh
-  sh build.sh $1
+  sh build.sh $2 $3
   sudo systemcl enable tomcat
 fi

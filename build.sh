@@ -20,12 +20,9 @@ if test "$appHealth" = "true" ; then
   	sh $TOMCAT_APP/build/bin/shutdown.sh
 fi
 
-
-rm -rf build
-
 os_name=$(uname)
 
-if [ "$os_name" == "Darwin" ]; then
+if [ "$os_name" = "Darwin" ]; then
     echo "Executing build script for MAC"
     exec sh mac_build.sh
 fi
@@ -44,9 +41,6 @@ export TOMCAT_APP=$TOMCAT_APP
 if [ "$1" != "auto" ]; then
   sudo systemctl stop tomcat
 fi
-
-
-sudo rm -rf build
 
 echo "JAVA_HOME : ${JAVA_HOME}"
 echo "GRADLE : ${GRADLE}"

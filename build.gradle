@@ -93,7 +93,7 @@ tasks.register ('setupTomcatContainer') {
         new File ("${deploymentPath}/logs").mkdirs ()
 
         copy {
-            from zipTree ("${projectDir}/development-files/tomcat_binary.zip")
+            from zipTree ("${projectDir}/development-files/tomcat-binary.zip")
             into "${deploymentPath}"
         }
 
@@ -104,13 +104,22 @@ tasks.register ('setupTomcatContainer') {
 
         delete new File (deploymentPath.toString (), "webapps").listFiles ()
 
-        exec {
-            commandLine "sed", "-i", "", "s|home_ph|${projectDir}|", "${deploymentPath}/run.sh"
-        }
+//        exec {
+//            commandLine "sed", "-i", "", "s|home_ph|${projectDir}|", "${deploymentPath}/run.sh"
+//        }
+//
+//        exec {
+//            commandLine "sed", "-i", "", "s|production_ph|${getCustomProperty ("production", false)}|", "${deploymentPath}/run.sh"
+//        }
 
-        exec {
-            commandLine "sed", "-i", "", "s|production_ph|${getCustomProperty ("production", false)}|", "${deploymentPath}/run.sh"
-        }
+        replaceToken ("${deploymentPath}/run.sh", [
+                [from: "home_ph",
+                 to  : "${projectDir}"
+                ],
+                [from: "production_ph",
+                 to  : getCustomProperty ("production", false)
+                ]
+        ])
 
         println "set-up tomcat container completed"
     }
