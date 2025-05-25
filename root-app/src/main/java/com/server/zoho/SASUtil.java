@@ -174,20 +174,19 @@ public class SASUtil
 		}
 		query = query.replaceAll("\n", " ").trim();
 		query = query.replaceAll("(\\.|;)$", "");
-		boolean isSelectQuery = false;
-		boolean isShowQuery = false;
+		boolean isUpdateOrDelete = false;
 		try(Connection connection = getDBConnection(server, ip, db, user, password))
 		{
 			PreparedStatement preparedStatement;
 
 			Pattern selectQuerPattern = Pattern.compile("(?i)(select)(.*)(from)\\s+(\\w+)(.*)");
 			Matcher selectQueryMatcher = selectQuerPattern.matcher(query);
-			Pattern updatePattern = Pattern.compile("(?i)(Update)\\s+(\\w+)\\s+(?i)(set)(.*)\\s+(?i)(where)\\s+(.*)");
+			Pattern updatePattern = Pattern.compile("(?i)(Update)\\s+(\\w+)\\s+(set)(.*)\\s+(where)\\s+(.*)");
 			Matcher updateMatcher = updatePattern.matcher(query);
-			Matcher showQueryMatcher = Pattern.compile("(?i)(Show)\\s+(\\w+)").matcher(query);
+			Pattern deletePattern = Pattern.compile("(?i)(Delete)\\s+(from)\\s+(\\w+)\\s+(where)\\s+(.*)");
+			Matcher deleteMatcher = deletePattern.matcher(query);
 			if(selectQueryMatcher.matches())
 			{
-				isSelectQuery = true;
 				ResultSet primaryKeys = connection.getMetaData().getPrimaryKeys(null, "jbossdb", selectQueryMatcher.group(4));
 				while(primaryKeys.next())
 				{
@@ -201,15 +200,17 @@ public class SASUtil
 					}
 				}
 			}
-			else if(updateMatcher.matches())
+			else if(updateMatcher.matches() || deleteMatcher.matches())
 			{
+				isUpdateOrDelete = true;
+				String tableName =  updateMatcher.matches() ? updateMatcher.group(2) : deleteMatcher.group(3);
 				Map<String, String> response = ZohoAPI.doAuthentication();
 				if(Objects.nonNull(response))
 				{
 					resultMap.putAll(response);
 					return;
 				}
-				ResultSet primaryKeys = connection.getMetaData().getPrimaryKeys(null, "jbossdb", updateMatcher.group(2));
+				ResultSet primaryKeys = connection.getMetaData().getPrimaryKeys(null, "jbossdb", tableName);
 				while(primaryKeys.next())
 				{
 					pkName = primaryKeys.getString("COLUMN_NAME");
@@ -224,7 +225,7 @@ public class SASUtil
 				}
 
 				int datType = -1;
-				ResultSet resultSet = connection.getMetaData().getColumns(null, "jbossdb", updateMatcher.group(2), null);
+				ResultSet resultSet = connection.getMetaData().getColumns(null, "jbossdb", tableName, null);
 				while(resultSet.next())
 				{
 					if(StringUtils.equals(pkName, resultSet.getString("COLUMN_NAME")))
@@ -236,15 +237,6 @@ public class SASUtil
 				{
 					throw new AppException("Update query cannot be performed as PK column with BIGINT type is not found for this table!");
 				}
-			}
-			else if(showQueryMatcher.matches())
-			{
-				isShowQuery = true;
-			}
-			else
-			{
-				resultMap.put("query_output", "Invalid query");
-				return;
 			}
 
 			Matcher orderByMatcher = Pattern.compile("(.*)(?i)(order)\\s+(?i)(by)(.*)").matcher(query);
@@ -293,7 +285,7 @@ public class SASUtil
 				preparedStatement.setObject(2, sasEndRange);
 			}
 
-			if(!(isSelectQuery || isShowQuery))
+			if(isUpdateOrDelete)
 			{
 				int updatedRecords = preparedStatement.executeUpdate();
 				if(updatedRecords > 1)
@@ -303,11 +295,11 @@ public class SASUtil
 				}
 
 				connection.commit();
-				resultMap.put("query_output", "Update query executed successfully");
+				resultMap.put("query_output", updateMatcher.matches() ? "Update" : "Delete" + " query executed successfully");
 				return;
 			}
 
-			preparedStatement.execute();
+			preparedStatement.executeQuery();
 			List queryOutput = getQueryOutput(preparedStatement);
 			resultMap.put("query_output", queryOutput);
 		}

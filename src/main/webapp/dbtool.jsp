@@ -970,10 +970,10 @@ function populateDBProducts()
                      }
 
                      else if (temp["query_output"] != undefined && temp["query_output"] != null) {
-                        if(temp["query_output"] == "Update query executed successfully")
+                        if(temp["query_output"].includes("query executed successfully"))
                         {
                             refreshTable();
-                            alert("Updated successfully!")
+                            alert(temp["query_output"])
                             return;
                         }
                         alert(temp["query_output"]);

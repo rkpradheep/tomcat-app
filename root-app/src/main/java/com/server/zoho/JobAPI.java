@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.client.methods.HttpPost;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.server.framework.common.AppException;
@@ -217,8 +218,10 @@ public class JobAPI
 		return jobResponse;
 	}
 
-	public String addOrUpdateOTJ(long jobId, String className, String retryRepetition, Integer delaySeconds, long userId, long customerId) throws Exception
+	public String addOrUpdateOTJ(List<Long> jobIdList, String className, String retryRepetition, Integer delaySeconds, long userId, long customerId) throws Exception
 	{
+		long jobId = (long) jobIdList.get(0);
+
 		JSONObject jobDetails = new JSONObject()
 			.put(getIdForOTJ("JOB_ID"), jobId)
 			.put(getIdForOTJ("CLASS_NAME"), className)
@@ -238,7 +241,7 @@ public class JobAPI
 				iterator.remove();
 			}
 		}
-		String jobMethodId = "j1";
+		String jobMethodId = "j3";
 		try
 		{
 			getJobDetails(jobId, customerId);
@@ -250,9 +253,13 @@ public class JobAPI
 			jobDetails.put(getIdForOTJ("SCHEDULED_TIME"), DateUtil.getCurrentTimeInMillis() + (1000L * ObjectUtils.defaultIfNull(delaySeconds, 0)));
 		}
 
+		JSONArray jobDetailsArray = new JSONArray();
+		jobDetailsArray.put("1");
+		jobIdList.forEach(jobIdObj -> jobDetailsArray.put(new JSONObject(jobDetails.toString()).put(getIdForOTJ("JOB_ID"), jobIdObj)));
+
 		JSONObject payload = new JSONObject()
 			.put("id", jobMethodId)
-			.put("0", jobDetails);
+			.put("0", jobDetailsArray);
 
 		HttpResponse httpResponse = HttpAPI.makeNetworkCall(taskEngineUrl, HttpPost.METHOD_NAME, headersMap, payload);
 		handleErrorResponse(httpResponse);

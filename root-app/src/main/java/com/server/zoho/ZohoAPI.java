@@ -17,10 +17,12 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -293,7 +295,8 @@ public class ZohoAPI extends HttpServlet
 		String queueName = payload.optString("thread_pool");
 		String className = payload.optString("class_name");
 		Integer delaySeconds = StringUtils.isEmpty((String) payload.opt("delay")) ? null : Integer.parseInt((String) payload.opt("delay"));
-		long jobId = payload.getLong("job_id");
+		List<Long> jobIdList = Arrays.stream(payload.getString("job_id").split(",")).map(String::trim).map(Long::parseLong).collect(Collectors.toUnmodifiableList());
+		long jobId = jobIdList.get(0);
 		String retryRepetition = payload.optString("retry_repetition");
 		String repetition = payload.optString("repetition");
 		boolean isRepetitive = payload.optBoolean("is_repetitive");
@@ -313,7 +316,7 @@ public class ZohoAPI extends HttpServlet
 
 		if(StringUtils.equals("add", operation))
 		{
-			return !isRepetitive ? JobAPI.getInstance(dc, serviceId, queueName).addOrUpdateOTJ(jobId, className, retryRepetition, delaySeconds, userId, customerId) : JobAPI.getInstance(dc, serviceId, queueName).addOrUpdateRepetitiveJob(jobId, className, repetition, retryRepetition, delaySeconds, userId, customerId);
+			return !isRepetitive ? JobAPI.getInstance(dc, serviceId, queueName).addOrUpdateOTJ(jobIdList, className, retryRepetition, delaySeconds, userId, customerId) : JobAPI.getInstance(dc, serviceId, queueName).addOrUpdateRepetitiveJob(jobId, className, repetition, retryRepetition, delaySeconds, userId, customerId);
 		}
 		else if(StringUtils.equals("delete", operation))
 		{
