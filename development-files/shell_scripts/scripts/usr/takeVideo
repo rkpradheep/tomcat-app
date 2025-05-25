@@ -1,0 +1,4 @@
+#!/bin/bash
+TOMCAT_APP=home_ph
+ffmpeg -y -f v4l2 -input_format mjpeg -video_size 640x480 -i /dev/video0 -t $1 -r 30 -c:v libx264 -preset medium -crf 23 $TOMCAT_APP/video.mp4
+

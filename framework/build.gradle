@@ -1,0 +1,32 @@
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+
+dependencies {
+    implementation project(':table-constants')
+}
+
+ processResources {
+    doLast {
+        def resourceDir = sourceSets.main.output.resourcesDir.absolutePath + "/com/server/framework/common"
+        def inputFile = file("$resourceDir/app.properties")
+        def outputFile = file("${resourceDir}/app.properties")
+
+        def props = new Properties()
+        inputFile.withInputStream { props.load(it) }
+
+        props.setProperty("build.label", LocalDateTime.ofInstant(Instant.ofEpochMilli(System.currentTimeMillis ()), ZoneId.of ("Asia/Calcutta")).format(DateTimeFormatter.ofPattern("MMM_dd_yyyy_HH_mm")))
+
+        if (customProperties != null)
+        {
+            customProperties.keySet().each { customKey -> props.put (customKey, customProperties.getProperty (customKey.toString ()))}
+        }
+
+        props.store (outputFile.newWriter(), null)
+
+        println "app property changes completed"
+
+    }
+}

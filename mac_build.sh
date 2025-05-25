@@ -14,16 +14,14 @@ trap '[ $? -eq 0 ] || echo "${RED}######### OPERATION FAILED #########${NC}"' EX
 echo "############## Build started ##############\n"
 
 
-if [ -z "$(git log origin/$(git rev-parse --abbrev-ref HEAD)..HEAD)" ]; then
-    if git diff --quiet; then
-      git pull origin master --rebase
-    fi
-else
-  echo "${RED}############## There are some unpushed commits. Please push and try again ##############${NC}\n"
-  exit 1
-fi
-
-export MY_HOME=$MY_HOME
+#if [ -z "$(git log origin/$(git rev-parse --abbrev-ref HEAD)..HEAD)" ]; then
+#    if git diff --quiet; then
+#      git pull origin master --rebase
+#    fi
+#else
+#  echo "${RED}############## There are some unpushed commits. Please push and try again ##############${NC}\n"
+#  exit 1
+#fi
 
 setupMysql() {
 
@@ -54,12 +52,10 @@ podman=/opt/podman/bin/podman
     fi
 }
 
-rm -rf tomcat_build
-
 setupMysql
 gradle setUpServer
 
-sh $MY_HOME/tomcat_build/run.sh
+sh $TOMCAT_APP/build/run.sh
 
 
 echo "${GREEN}############## Build completed ##############${NC}\n"

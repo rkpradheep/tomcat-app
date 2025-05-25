@@ -1,0 +1,46 @@
+def buildToolDir = file ("src/main/build-tools")
+
+dependencies {
+    compileOnly fileTree (dir: "${buildToolDir}/lib", include: ['*.jar'])
+}
+
+jar {
+    doLast {
+
+        def tmpDir = "${layout.buildDirectory.get ().asFile.absolutePath}/temp"
+        new File ("${tmpDir}").mkdirs ()
+
+        project.javaexec {
+            classpath = files (project.tasks.named ('jar').flatMap { it.archiveFile })
+            classpath += files (fileTree (dir: "${buildToolDir}/lib", include: ['*.jar']).files)
+            classpath += files (fileTree (dir: "${project.parent.war.webAppDirectory.get ().asFile.absolutePath}/WEB-INF/lib", include: ['*.jar']).files)
+            mainClass = 'TableConstantGenerator'
+            args = [
+                   parent.project.getCustomProperty ("db.server", "mariadb"),
+                   parent.project.getCustomProperty ("db.server.port", "4000"),
+                   parent.project.getCustomProperty ("db.server.user", "root"),
+                   parent.project.getCustomProperty ("db.server.password", "root"),
+                   parent.project.getCustomProperty ("db.server.schema", "tomcatserver")
+            ]
+            environment 'TOMCAT_APP', rootProject.projectDir
+        }
+
+        def mainClassesDir = sourceSets.main.output.classesDirs.asPath
+
+        delete new File(mainClassesDir).listFiles ()
+        delete new File (layout.buildDirectory.get ().asFile, "libs").listFiles ()
+
+        ant.javac (
+                srcdir: "${tmpDir}",
+                destdir: "${mainClassesDir}",
+                includeantruntime: false
+        )
+
+        ant.jar (
+                destfile: "${layout.buildDirectory.get ().asFile.absolutePath}/libs/table-constants.jar",
+                basedir: "${mainClassesDir}"
+        )
+
+        delete tmpDir
+    }
+}

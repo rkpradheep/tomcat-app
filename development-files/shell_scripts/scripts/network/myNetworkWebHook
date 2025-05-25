@@ -1,0 +1,8 @@
+#!/bin/bash
+
+TOMCAT_APP=home_ph
+echo Status : $2 >> $TOMCAT_APP/output.txt
+if [ "$2" = "up" ]; then
+    echo Restarting ngrok >> $TOMCAT_APP/output.txt
+    restartngrok
+fi
