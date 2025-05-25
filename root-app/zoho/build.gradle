@@ -1,5 +1,5 @@
 dependencies {
-    implementation project(':framework')
-    implementation project(':root-app')
-    implementation project(':table-constants')
+    implementation project (':framework')
+    implementation project (':root-app')
+    implementation files (project (':table-constants').tasks.named ('jar').flatMap { it.archiveFile })
 }

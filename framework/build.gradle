@@ -3,9 +3,8 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-
 dependencies {
-    implementation project(':table-constants')
+    implementation files (project (':table-constants').tasks.named ('jar').flatMap { it.archiveFile })
 }
 
  processResources {
