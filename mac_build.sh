@@ -43,7 +43,7 @@ podman=/opt/podman/bin/podman
 }
 
 setupMysql
-gradle setUpServer
+gradle cleanBuild
 
 sh $TOMCAT_APP/build/run.sh
 

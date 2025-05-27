@@ -98,6 +98,7 @@
         DataSpace Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="text" id="zsid" style="width: 100px; height: 25px;" /><br /><br />
         <!-- PK Value &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -->
         <input type="text" id="pk" style="width: 200px; height: 19px;display: none" placeholder="PK"/><br />
+        <input type="checkbox" id="skip_scoping"> SKIP SAS SCOPE &nbsp;&nbsp</br>
         <!--<p>Click on <b>Enable Autocomplete and Quick Execution</b> button to enable intellisense support.</p>-->
         <button id="quickExe" onclick="getTables()">Populate tables</button><br />
         <div id="tableSelection" style="display: none;">
@@ -927,6 +928,7 @@ function populateDBProducts()
                 "password": document.getElementById("password").value,
                 "zsid": document.getElementById("zsid").value,
                 "pk": document.getElementById("pk").value,
+                "skip_scoping" : document.getElementById("skip_scoping").checked,
                 "query": document.getElementById("query").value,
                 "is_encrypted": isEncrypted,
             }

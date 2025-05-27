@@ -6,6 +6,8 @@ dependencies {
 }
 
 jar {
+    dependsOn clean //Since table-constants jar is generated dynamically and overwrites module's jar, we need to clean it first to force compile it
+
     doLast {
         def tmpDir = "${layout.buildDirectory.get ().asFile.absolutePath}/temp"
         new File ("${tmpDir}").mkdirs ()
