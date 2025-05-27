@@ -46,7 +46,7 @@ echo "JAVA_HOME : ${JAVA_HOME}"
 echo "GRADLE : ${GRADLE}"
 echo "TOMCAT_APP : ${TOMCAT_APP}"
 
-$GRADLE setupServer
+$GRADLE cleanBuild
 
 if [ "$1" != "auto" ]; then
   sudo systemctl start tomcat

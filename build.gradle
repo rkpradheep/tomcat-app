@@ -38,6 +38,12 @@ subprojects {
             println ("jar packaging completed")
         }
     }
+
+    clean{
+        doLast {
+            println ("clean task executed for ${project.name}")
+        }
+    }
 }
 
 dependencies {
@@ -191,12 +197,28 @@ tasks.register ('cleanAll') {
     description = 'Cleans all subprojects.'
 
     dependsOn subprojects.collect { it.path + ":clean" }
+
+    doLast{
+        println "All subprojects cleaned successfully"
+    }
 }
+
+tasks.register ('cleanBuild') {
+    doLast{
+        println "clean build task executed"
+    }
+}
+
+
+
+configureTaskDependencies (cleanBuild, [
+        cleanAll,
+        setupServer
+])
 
 
 configureTaskDependencies (setupServer, [
         setupTomcatContainer,
-        project (':table-constants').clean, //Since table-constants jar is generated dynamically and overwrites module's jar, we need to clean it first to force compile it
         project (':table-constants').build,
         project (':framework').build,
         project (':root-app').build,

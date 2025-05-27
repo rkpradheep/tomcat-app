@@ -295,7 +295,7 @@ public class SASUtil
 				}
 
 				connection.commit();
-				resultMap.put("query_output", updateMatcher.matches() ? "Update" : "Delete" + " query executed successfully");
+				resultMap.put("query_output", (updateMatcher.matches() ? "Update" : "Delete") + " query executed successfully");
 				return;
 			}
 
