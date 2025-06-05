@@ -246,7 +246,7 @@ public class JobAPI
 		{
 			getJobDetails(jobId, customerId);
 			jobDetails.put(getIdForOTJ("SCHEDULED_TIME"), Objects.isNull(delaySeconds) ? null : DateUtil.getCurrentTimeInMillis() + (1000L * delaySeconds));
-			jobMethodId = "j5";
+			jobMethodId = "j25";
 		}
 		catch(Exception e)
 		{
@@ -264,7 +264,7 @@ public class JobAPI
 		HttpResponse httpResponse = HttpAPI.makeNetworkCall(taskEngineUrl, HttpPost.METHOD_NAME, headersMap, payload);
 		handleErrorResponse(httpResponse);
 
-		return jobMethodId.equals("j5") ? "Job updated successfully" : "Job added successfully";
+		return jobMethodId.equals("j25") ? "Job(s) updated successfully" : "Job(s) added successfully";
 	}
 
 	public String addOrUpdateRepetitiveJob(long jobId, String className, String repetition, String retryRepetition, Integer delaySeconds, long userId, long customerId) throws Exception

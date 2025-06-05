@@ -1,6 +1,6 @@
 podman rm --force tomcat_app
 
-podman run -d -t -p 443:443 -p 80:80 -p 8002:8002 --name tomcat_app tomcat-app:latest /bin/bash
+podman run -d -t -p 443:443 -p 80:80 -p 8000:8000 --name tomcat_app tomcat-app:latest /bin/bash
 
 
 podman cp ./custom/ tomcat_app:/tomcat_app

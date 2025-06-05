@@ -1,7 +1,7 @@
 #!/bin/sh
 export TOMCAT_APP=
 export CUSTOM_JAVA_OPTS=
-export JPDA_ADDRESS="*:8002"
+export JPDA_ADDRESS="*:8000"
 export JAVA_HOME=
 export CATALINA_PID="/$TOMCAT_APP/build/temp/tomcat.pid"
 export CATALINA_HOME="$TOMCAT_APP/build"
