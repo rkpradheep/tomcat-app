@@ -29,6 +29,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,6 +43,7 @@ import org.json.JSONObject;
 
 import com.server.framework.common.AppException;
 import com.server.framework.common.Configuration;
+import com.server.framework.common.DateUtil;
 import com.server.framework.common.EntityType;
 import com.server.framework.common.Util;
 import com.server.framework.http.HttpAPI;
@@ -55,6 +57,8 @@ public class ZohoAPI extends HttpServlet
 	private static final Hex HEX = new Hex();
 	private static final Logger LOGGER = Logger.getLogger(ZohoAPI.class.getName());
 	private static final Map<String, String> DC_DOMAIN_MAPPING;
+	private static final Map<String, String> TOKEN_HASH_EMAIL_CACHE = new HashMap<>();
+	private static final Map<String, Long> TOKEN_HASH_EXPIRY_TIME = new HashMap<>();
 
 	static
 	{
@@ -391,9 +395,25 @@ public class ZohoAPI extends HttpServlet
 		}
 
 		zohoToken = Util.getAESDecryptedValue(zohoToken);
+		String tokenHash = DigestUtils.sha256Hex(zohoToken);
+		if(TOKEN_HASH_EMAIL_CACHE.containsKey(tokenHash))
+		{
+			if(TOKEN_HASH_EXPIRY_TIME.get(tokenHash) > DateUtil.getCurrentTimeInMillis())
+			{
+				return TOKEN_HASH_EMAIL_CACHE.get(tokenHash);
+			}
+			TOKEN_HASH_EXPIRY_TIME.remove(tokenHash);
+			TOKEN_HASH_EMAIL_CACHE.remove(tokenHash);
+		}
 		String url = ZohoAPI.getDomainUrl("accounts","/oauth/user/info","us");
 		JSONObject response = HttpAPI.makeNetworkCall(new HttpContext(url, HttpGet.METHOD_NAME).setHeadersMap(Map.of("Authorization", "Bearer ".concat(zohoToken)))).getJSONResponse();
-		return response.optString("Email");
+		String email = response.optString("Email");
+		if(StringUtils.isNotEmpty(email))
+		{
+			TOKEN_HASH_EMAIL_CACHE.put(tokenHash, email);
+			TOKEN_HASH_EXPIRY_TIME.put(tokenHash, DateUtil.getCurrentTime().plusMinutes(30).toInstant().toEpochMilli());
+		}
+		return email;
 	}
 
 	public static Map<String, String> doAuthentication() throws Exception

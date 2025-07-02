@@ -23,6 +23,11 @@ public class DateUtil
 		return ZonedDateTime.now(ASIA_KOLKATA_TIME_ZONE).toInstant().toEpochMilli();
 	}
 
+	public static ZonedDateTime getCurrentTime()
+	{
+		return ZonedDateTime.now(ASIA_KOLKATA_TIME_ZONE);
+	}
+
 	public static long getDayStartInMillis(String date, String format)
 	{
 		return LocalDate.parse(date, DateTimeFormatter.ofPattern(format)).atStartOfDay(ASIA_KOLKATA_TIME_ZONE).toInstant().toEpochMilli();
@@ -72,6 +77,11 @@ public class DateUtil
 
 	public static String getFormattedTime(Long timeInMilliseconds, String format)
 	{
-		return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeInMilliseconds), ASIA_KOLKATA_TIME_ZONE).format(DateTimeFormatter.ofPattern(format));
+		return parse(timeInMilliseconds).format(DateTimeFormatter.ofPattern(format));
+	}
+
+	public static LocalDateTime parse(Long timeInMilliseconds)
+	{
+		return LocalDateTime.ofInstant(Instant.ofEpochMilli(timeInMilliseconds), ASIA_KOLKATA_TIME_ZONE);
 	}
 }
